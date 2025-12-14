@@ -129,3 +129,12 @@ export function getObliquity() {
     // Mean obliquity of ecliptic J2000
     return 23.4392911;
 }
+
+/**
+ * Returns the rotation of the Earth in radians for the given date.
+ * Based on Greenwich Apparent Sidereal Time (GAST).
+ */
+export function getEarthRotation(date: Date) {
+    const gast = Astronomy.SiderealTime(date); // Hours [0, 24)
+    return (gast / 24) * 2 * Math.PI;
+}
