@@ -24,10 +24,11 @@
     let clientHeight = 150;
 
     // Scales
-    // Azimuth: 0 (North) -> 360 (North)
-    $: scaleX = (deg: number) =>
+    // X-Axis: Time (0 to 24 hours in minutes) -> 0 to clientWidth
+    $: scaleX = (minutes: number) =>
         padding.left +
-        (deg / 360) * (clientWidth - padding.left - padding.right);
+        (minutes / (24 * 60)) * (clientWidth - padding.left - padding.right);
+
     // Generate Path Data and find Max/Min Altitude for the day
     let pathD = "";
     let maxAltPoint = { x: 0, y: 0, alt: -Infinity, az: 0, time: "" };
@@ -42,6 +43,14 @@
         const localDate = new Date(d.getTime() + offsetMs);
         // Use UTC methods on the shifted date to get the "face value" time
         return localDate.toISOString().slice(11, 16);
+    }
+
+    // Get Minutes from start of local day
+    function getMinutesFromMidnight(d: Date, lon: number) {
+        if (!d) return 0;
+        const offsetMs = (lon / 15) * 3600 * 1000;
+        const localDate = new Date(d.getTime() + offsetMs);
+        return localDate.getUTCHours() * 60 + localDate.getUTCMinutes();
     }
 
     // Get the UTC timestamp for the start of the local day (00:00 Local Time)
@@ -66,11 +75,8 @@
 
         pathD = "";
 
-        let lastAz = -1;
-        let segmentStart = true;
         let currentMaxAlt = -90;
         let currentMinAlt = 90;
-        let maxAltData = null;
 
         // Iterate through day in 15 min intervals
         for (let m = 0; m <= 24 * 60; m += 15) {
@@ -100,10 +106,21 @@
         ((deg - minAlt) / (maxAlt - minAlt)) *
             (clientHeight - padding.top - padding.bottom);
 
-    $: sunX = scaleX(sunPos.azimuth);
+    // Sun X is now based on current time minutes
+    $: sunX = scaleX(
+        getMinutesFromMidnight($currentDate, $observerLocation.lon),
+    );
     $: sunY = scaleY(sunPos.altitude);
-    $: riseX = riseAz !== null ? scaleX(riseAz) : null;
-    $: setX = setAz !== null ? scaleX(setAz) : null;
+
+    $: riseX = sunTimes.sunrise
+        ? scaleX(
+              getMinutesFromMidnight(sunTimes.sunrise, $observerLocation.lon),
+          )
+        : null;
+    $: setX = sunTimes.sunset
+        ? scaleX(getMinutesFromMidnight(sunTimes.sunset, $observerLocation.lon))
+        : null;
+
     $: horizonY = scaleY(0);
 
     // Re-calc Path and Markers with new scales
@@ -114,7 +131,6 @@
         );
 
         pathD = "";
-        let lastAz = -1;
         let segmentStart = true;
         let localMaxAlt = -90;
         let maxAltData = null;
@@ -123,7 +139,7 @@
             const time = new Date(startOfDay.getTime() + m * 60000);
             const pos = getSunPosition(time, $observerLocation);
 
-            const x = scaleX(pos.azimuth);
+            const x = scaleX(m); // X is Time (minutes)
             const y = scaleY(pos.altitude);
 
             if (pos.altitude > localMaxAlt) {
@@ -138,17 +154,12 @@
             }
 
             // Draw Path
-            // Break path if it wraps around N (0/360)?
-            // Azimuth jumps 359 -> 1. Math.abs > 180 checks this.
-            if (!segmentStart && Math.abs(pos.azimuth - lastAz) > 180) {
-                pathD += ` M ${x} ${y}`;
-            } else if (segmentStart) {
+            if (segmentStart) {
                 pathD += `M ${x} ${y}`;
                 segmentStart = false;
             } else {
                 pathD += ` L ${x} ${y}`;
             }
-            lastAz = pos.azimuth;
         }
 
         if (maxAltData) maxAltPoint = maxAltData;
@@ -187,29 +198,22 @@
             stroke-dasharray="4"
         />
 
-        <!-- Grid/Labels X (Azimuth) -->
-        {#each [0, 90, 180, 270, 360] as az}
+        <!-- Grid/Labels X (Time) -->
+        {#each [0, 6, 12, 18, 24] as hr}
             <line
-                x1={scaleX(az)}
+                x1={scaleX(hr * 60)}
                 y1={clientHeight - padding.bottom}
-                x2={scaleX(az)}
+                x2={scaleX(hr * 60)}
                 y2={clientHeight - padding.bottom + 5}
                 stroke="#666"
             />
             <text
-                x={scaleX(az)}
+                x={scaleX(hr * 60)}
                 y={clientHeight - 5}
                 font-size="11"
                 fill="#aaa"
                 text-anchor="middle"
-                font-weight="bold"
-                >{az === 0 || az === 360
-                    ? "N"
-                    : az === 90
-                      ? "E"
-                      : az === 180
-                        ? "S"
-                        : "W"}</text
+                font-weight="bold">{hr.toString().padStart(2, "0")}:00</text
             >
         {/each}
 
