@@ -5,13 +5,15 @@
 
     export let year: number = 2025;
 
-    let geometry = new BufferGeometry();
+    // Use a stable instance to prevent flickering/unmounting
+    const geometry = new BufferGeometry();
 
     // Calculate orbit path for the year
     $: {
         const pts: Vector3[] = [];
         // Sample every 5 days to get a smooth curve
-        for (let d = 0; d <= 365; d += 5) {
+        // We use 366 to cover leap years safely and ensure closure
+        for (let d = 0; d <= 366; d += 5) {
             const date = new Date(year, 0, d); // Jan 1st + d days
             const pos = getEarthOrbitPosition(date);
             // Mapping: Astro Z -> Three Y (Up), Astro X -> Three X, Astro Y -> Three -Z
@@ -23,15 +25,19 @@
             pts.push(pts[0]);
 
             const curve = new CatmullRomCurve3(pts);
-            geometry = new BufferGeometry().setFromPoints(curve.getPoints(100));
+            const points = curve.getPoints(100);
+            geometry.setFromPoints(points);
+            // Hint that an update occurred (though setFromPoints usually handles this)
+            // geometry.attributes.position.needsUpdate = true;
         }
     }
 </script>
 
-<T.Line>
-    {#key geometry}
-        <!-- Re-render geometry when it changes -->
-        <T.BufferGeometry {...geometry} />
-    {/key}
-    <T.LineBasicMaterial color="white" opacity={0.8} transparent />
+<T.Line {geometry}>
+    <T.LineBasicMaterial
+        color="white"
+        opacity={0.3}
+        transparent
+        linewidth={1}
+    />
 </T.Line>

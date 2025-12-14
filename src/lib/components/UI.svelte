@@ -8,6 +8,7 @@
   } from "../stores";
   import { getSunTimes, getSeasons } from "../astronomy";
   import SkyView from "./SkyView.svelte";
+  import CitySearch from "./CitySearch.svelte";
 
   // Format date for display
   $: formattedDate = $currentDate.toLocaleString();
@@ -122,35 +123,17 @@
 
       <div class="control-group">
         <label>
-          Location Preset:
-          <select
-            on:change={(e) => {
-              const val = e.currentTarget.value;
-              if (val) {
-                const [lat, lon] = val.split(",").map(parseFloat);
-                observerLocation.set({ lat, lon });
-              }
-            }}
-          >
-            <option value="">Select a city...</option>
-            <optgroup label="Custom">
-              <option value="59.216011,11.014277">Begby, Norway</option>
-            </optgroup>
-            <optgroup label="Major Cities">
-              <option value="51.5074,-0.1278">London, UK</option>
-              <option value="40.7128,-74.0060">New York, USA</option>
-              <option value="35.6762,139.6503">Tokyo, Japan</option>
-              <option value="-33.8688,151.2093">Sydney, Australia</option>
-              <option value="48.8566,2.3522">Paris, France</option>
-            </optgroup>
-            <optgroup label="Extremes">
-              <option value="78.2232,15.6267">Longyearbyen (North)</option>
-              <option value="-54.8019,-68.3030">Ushuaia (South)</option>
-              <option value="0.0,0.0">Equator / Prime Meridian</option>
-            </optgroup>
-          </select>
+          Search Location:
+          <CitySearch />
         </label>
       </div>
+
+      <!-- Keep presets as fallback? Or maybe remove them? 
+         User wanted to "connect to a free service... and have search input". 
+         I'll keep a few major presets below as a "Quick Select" or just remove the old select.
+         The old select was bulky. Let's replace it entirely but maybe keep "Quick Jump" buttons later if needed.
+         For now, full replacement as per request for "connection to service".
+    -->
 
       <div class="control-group coords">
         <label
@@ -164,34 +147,118 @@
 
     <div class="info-section">
       <h3>{new Date().getFullYear()} Events</h3>
-      <ul>
+      <ul class="event-list">
         <li>
-          <strong>Mar Eq:</strong>
-          {seasons.marchEquinox.date.toLocaleString()} <br />
-          <span class="detail"
-            >Lon: {seasons.marchEquinox.longitude.toFixed(5)}°</span
-          >
+          <div class="event-header">
+            <strong>Mar Eq:</strong>
+            {seasons.marchEquinox.date.toLocaleString()}
+          </div>
+          <div class="event-body">
+            <div class="cities-box">
+              {#each seasons.marchEquinox.closestCities as city}
+                <button
+                  class="city-link"
+                  on:click={() =>
+                    observerLocation.set({ lat: city.lat, lon: city.lon })}
+                  title="Jump to {city.name}"
+                >
+                  {city.name}
+                </button>
+              {/each}
+            </div>
+            <div class="data-box">
+              <div class="data-row">
+                Orbit: {seasons.marchEquinox.longitude.toFixed(1)}°
+              </div>
+              <div class="data-row">
+                Noon: {seasons.marchEquinox.subSolarLongitude.toFixed(1)}°
+              </div>
+            </div>
+          </div>
         </li>
         <li>
-          <strong>Jun Sol:</strong>
-          {seasons.juneSolstice.date.toLocaleString()} <br />
-          <span class="detail"
-            >Lon: {seasons.juneSolstice.longitude.toFixed(5)}°</span
-          >
+          <div class="event-header">
+            <strong>Jun Sol:</strong>
+            {seasons.juneSolstice.date.toLocaleString()}
+          </div>
+          <div class="event-body">
+            <div class="cities-box">
+              {#each seasons.juneSolstice.closestCities as city}
+                <button
+                  class="city-link"
+                  on:click={() =>
+                    observerLocation.set({ lat: city.lat, lon: city.lon })}
+                  title="Jump to {city.name}"
+                >
+                  {city.name}
+                </button>
+              {/each}
+            </div>
+            <div class="data-box">
+              <div class="data-row">
+                Orbit: {seasons.juneSolstice.longitude.toFixed(1)}°
+              </div>
+              <div class="data-row">
+                Noon: {seasons.juneSolstice.subSolarLongitude.toFixed(1)}°
+              </div>
+            </div>
+          </div>
         </li>
         <li>
-          <strong>Sep Eq:</strong>
-          {seasons.sepEquinox.date.toLocaleString()} <br />
-          <span class="detail"
-            >Lon: {seasons.sepEquinox.longitude.toFixed(5)}°</span
-          >
+          <div class="event-header">
+            <strong>Sep Eq:</strong>
+            {seasons.sepEquinox.date.toLocaleString()}
+          </div>
+          <div class="event-body">
+            <div class="cities-box">
+              {#each seasons.sepEquinox.closestCities as city}
+                <button
+                  class="city-link"
+                  on:click={() =>
+                    observerLocation.set({ lat: city.lat, lon: city.lon })}
+                  title="Jump to {city.name}"
+                >
+                  {city.name}
+                </button>
+              {/each}
+            </div>
+            <div class="data-box">
+              <div class="data-row">
+                Orbit: {seasons.sepEquinox.longitude.toFixed(1)}°
+              </div>
+              <div class="data-row">
+                Noon: {seasons.sepEquinox.subSolarLongitude.toFixed(1)}°
+              </div>
+            </div>
+          </div>
         </li>
         <li>
-          <strong>Dec Sol:</strong>
-          {seasons.decSolstice.date.toLocaleString()} <br />
-          <span class="detail"
-            >Lon: {seasons.decSolstice.longitude.toFixed(5)}°</span
-          >
+          <div class="event-header">
+            <strong>Dec Sol:</strong>
+            {seasons.decSolstice.date.toLocaleString()}
+          </div>
+          <div class="event-body">
+            <div class="cities-box">
+              {#each seasons.decSolstice.closestCities as city}
+                <button
+                  class="city-link"
+                  on:click={() =>
+                    observerLocation.set({ lat: city.lat, lon: city.lon })}
+                  title="Jump to {city.name}"
+                >
+                  {city.name}
+                </button>
+              {/each}
+            </div>
+            <div class="data-box">
+              <div class="data-row">
+                Orbit: {seasons.decSolstice.longitude.toFixed(1)}°
+              </div>
+              <div class="data-row">
+                Noon: {seasons.decSolstice.subSolarLongitude.toFixed(1)}°
+              </div>
+            </div>
+          </div>
         </li>
       </ul>
     </div>
@@ -486,9 +553,62 @@
     margin-bottom: 10px;
     line-height: 1.4;
   }
-  .detail {
-    font-size: 0.85em;
-    color: #888;
-    margin-left: 5px;
+  .event-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .event-list li {
+    margin-bottom: 12px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+  }
+  .event-list li:last-child {
+    border-bottom: none;
+  }
+
+  .event-header {
+    margin-bottom: 4px;
+    font-size: 0.95em;
+  }
+
+  .event-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .cities-box {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .city-link {
+    background: none;
+    border: 1px solid #444;
+    border-radius: 3px;
+    color: #ff9800;
+    cursor: pointer;
+    font-size: 0.75em;
+    padding: 2px 6px;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .city-link:hover {
+    background: #333;
+    border-color: #666;
+  }
+
+  .data-box {
+    text-align: right;
+    min-width: 80px;
+    font-size: 0.75em;
+    color: #aaa;
+    border-left: 1px solid #333;
+    padding-left: 8px;
   }
 </style>

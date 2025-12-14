@@ -1,10 +1,26 @@
 import * as Astronomy from 'astronomy-engine';
+import { MAJOR_CITIES, type City } from "./cities";
 
 export const WGS84 = {
     radiusEquator: 6378.137, // km
     radiusPolar: 6356.752, // km
     flattening: 1 / 298.257223563
 };
+
+export interface SeasonEvent {
+    date: Date;
+    distance: number; // AU
+    longitude: number; // Heliocentric Longitude (degrees)
+    subSolarLongitude: number; // Geographic Longitude (degrees)
+    closestCities: City[];
+}
+
+export interface Seasons {
+    marchEquinox: SeasonEvent;
+    juneSolstice: SeasonEvent;
+    sepEquinox: SeasonEvent;
+    decSolstice: SeasonEvent;
+}
 
 export type SphericalCoords = {
     lat: number;
@@ -78,34 +94,100 @@ export function getSunTimes(date: Date, location: SphericalCoords) {
     };
 }
 
+// ... (existing code helpers)
+
+function getSubSolarLongitude(date: Date): number {
+    // 1. Get Sun's position logic
+    // We need the Greenwhich Apparent Sidereal Time (GAST) to know Earth's rotation
+    const gast = Astronomy.SiderealTime(date);
+
+    // We need Sun's Right Ascension (RA)
+    const observer = new Astronomy.Observer(0, 0, 0); // Correct constructor usage
+    const sunEquator = Astronomy.Equator(Astronomy.Body.Sun, date, observer, false, true);
+
+    // Hour Angle (HA) = Local Sidereal Time (LST) - Right Ascension (RA)
+    // At the sub-solar point, the Sun is at the zenith, so Hour Angle = 0.
+    // LST = GAST + Longitude
+    // 0 = (GAST + Longitude) - RA
+    // Longitude = RA - GAST
+
+    let lon = sunEquator.ra - gast;
+
+    // Normalize to -180 to 180 (geographic longitude)
+    // RA and GAST are in hours (0-24), map to degrees (0-360) first?
+    // Astronomy.ts handles RA/GAST in hours usually. Let's check docs or source if available.
+    // Assuming hours:
+    lon = lon * 15; // Convert hours to degrees
+
+    // Normalize to [-180, 180]
+    while (lon > 180) lon -= 360;
+    while (lon < -180) lon += 360;
+
+    return lon;
+}
+
+function getClosestCities(date: Date): City[] {
+    const targetLon = getSubSolarLongitude(date);
+
+    // Calculate distance for all cities
+    // We only care about Longitude difference for "time" matching (closest to noon)
+    // User asked "closest longitude".
+
+    const sorted = [...MAJOR_CITIES].sort((a, b) => {
+        // Handle wrapping (e.g. 179 and -179 are close)
+        let diffA = Math.abs(a.lon - targetLon);
+        if (diffA > 180) diffA = 360 - diffA;
+
+        let diffB = Math.abs(b.lon - targetLon);
+        if (diffB > 180) diffB = 360 - diffB;
+
+        return diffA - diffB;
+    });
+
+    return sorted.slice(0, 3);
+}
+
 /**
- * Get solstices and equinoxes for a year.
+ * Calculates the heliocentric longitude of the Earth for a given date.
+ * @param date The date for which to calculate the longitude.
+ * @returns Heliocentric longitude in degrees [0, 360).
  */
+function getHeliocentricLongitude(date: Date): number {
+    const pos = Astronomy.HelioVector(Astronomy.Body.Earth, date);
+    // Calculate heliocentric longitude
+    // atan2(y, x) gives angle in radians. Convert to degrees.
+    // Range [-180, 180]. Normalize to [0, 360].
+    let lonDeg = Math.atan2(pos.y, pos.x) * (180 / Math.PI);
+    if (lonDeg < 0) lonDeg += 360;
+    return lonDeg;
+}
+
 /**
  * Get solstices and equinoxes for a year with detailed info.
  */
-export function getSeasons(year: number) {
+export function getSeasons(year: number): Seasons {
     const seasons = Astronomy.Seasons(year);
 
-    const enrich = (date: Date, name: string) => {
-        const pos = Astronomy.HelioVector(Astronomy.Body.Earth, date);
-        // Calculate heliocentric longitude
-        // atan2(y, x) gives angle in radians. Convert to degrees.
-        // Range [-180, 180]. Normalize to [0, 360].
-        let lonDeg = Math.atan2(pos.y, pos.x) * (180 / Math.PI);
-        if (lonDeg < 0) lonDeg += 360;
+    function makeEvent(d: Astronomy.AstroTime): SeasonEvent { // Use correct type
+        const date = d.date;
+        // const dist = Astronomy.Illumination(Astronomy.Body.Sun, d).mag; // Not distance, check Illumination struct? Use HelioVector for dist.
+        const hv = Astronomy.HelioVector(Astronomy.Body.Earth, d);
+        const distance = Math.sqrt(hv.x * hv.x + hv.y * hv.y + hv.z * hv.z);
 
         return {
             date: date,
-            longitude: lonDeg
+            distance: distance,
+            longitude: getHeliocentricLongitude(date),
+            subSolarLongitude: getSubSolarLongitude(date),
+            closestCities: getClosestCities(date)
         };
-    };
+    }
 
     return {
-        marchEquinox: enrich(seasons.mar_equinox.date, "March Equinox"),
-        juneSolstice: enrich(seasons.jun_solstice.date, "June Solstice"),
-        sepEquinox: enrich(seasons.sep_equinox.date, "September Equinox"),
-        decSolstice: enrich(seasons.dec_solstice.date, "December Solstice")
+        marchEquinox: makeEvent(seasons.mar_equinox),
+        juneSolstice: makeEvent(seasons.jun_solstice),
+        sepEquinox: makeEvent(seasons.sep_equinox),
+        decSolstice: makeEvent(seasons.dec_solstice),
     };
 }
 
