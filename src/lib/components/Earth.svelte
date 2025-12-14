@@ -3,12 +3,13 @@
     import { MathUtils, TextureLoader } from "three";
     import { WGS84, getObliquity, getEarthRotation } from "../astronomy";
     import { currentDate, observerLocation } from "../stores";
+    import SolarNoonLine from "./SolarNoonLine.svelte";
 
     export let x = 0;
     export let y = 0;
     export let z = 0;
 
-    const texture = useLoader(TextureLoader).load("/earth_texture.png");
+    const texture = useLoader(TextureLoader).load("/earth_texture_nasa.jpg");
 
     const obliquityRad = MathUtils.degToRad(getObliquity());
 
@@ -88,6 +89,9 @@
                 <T.CylinderGeometry args={[0.02, 0.02, 2.4]} />
                 <T.MeshBasicMaterial color="white" />
             </T.Mesh>
+
+            <!-- Solar Noon Line (Visualizer for events) -->
+            <SolarNoonLine />
         </T.Group>
     {/if}
 </T.Group>

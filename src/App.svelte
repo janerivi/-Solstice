@@ -1,11 +1,12 @@
 <script lang="ts">
-  import Scene from './lib/components/Scene.svelte';
-  import UI from './lib/components/UI.svelte';
+  import Scene from "./lib/components/Scene.svelte";
+  import UI from "./lib/components/UI.svelte";
 </script>
 
 <main>
-  <Scene />
-  <UI />
+  <UI>
+    <Scene />
+  </UI>
 </main>
 
 <style>

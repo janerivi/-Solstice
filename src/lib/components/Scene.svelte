@@ -10,7 +10,7 @@
     import OrbitMarkers from "./OrbitMarkers.svelte";
     import { getEarthOrbitPosition } from "../astronomy";
     // Stores used for reactivity
-    import { currentDate } from "../stores";
+    import { currentDate, cameraMode } from "../stores";
     import type { Vector3D } from "../astronomy";
 
     let earthPos: Vector3D = { x: 0, y: 0, z: 0 };
@@ -28,30 +28,34 @@
     }
 </script>
 
-```
 <div class="scene-container">
     <Canvas shadows>
-        <T.PerspectiveCamera makeDefault position={[0, 20, 40]} fov={45}>
-            <OrbitControls enableDamping />
-        </T.PerspectiveCamera>
+        {#if $cameraMode === "perspective"}
+            <!-- Rotated 90 degrees: viewing from X axis [40, 20, 0] instead of Z [0, 20, 40] -->
+            <T.PerspectiveCamera makeDefault position={[40, 20, 0]} fov={45}>
+                <OrbitControls enableDamping />
+            </T.PerspectiveCamera>
+        {:else}
+            <!-- Increased zoom to 35 for tighter default view -->
+            <T.OrthographicCamera
+                makeDefault
+                position={[40, 20, 0]}
+                zoom={35}
+                near={-100}
+                far={100}
+            >
+                <OrbitControls enableDamping />
+            </T.OrthographicCamera>
+        {/if}
 
         <T.AmbientLight intensity={0.1} />
 
-        <!-- Logic -->
         <OrbitManager />
-
-        <!-- Universe Background (Stars) could be added here -->
-
-        <!-- Components -->
         <Sun />
-
-        <!-- Pass dynamic year -->
         <OrbitPath year={$currentDate.getFullYear()} />
         <OrbitMarkers year={$currentDate.getFullYear()} />
-
         <Earth x={earthPos.x} y={earthPos.y} z={earthPos.z} />
 
-        <!-- Helpers -->
         <T.GridHelper args={[100, 100, 0x222222, 0x111111]} />
     </Canvas>
 </div>
@@ -59,7 +63,8 @@
 <style>
     .scene-container {
         width: 100%;
-        height: 100vh;
+        height: 100%; /* Fill parent */
         background-color: #050505;
+        overflow: hidden; /* Prevent spill */
     }
 </style>

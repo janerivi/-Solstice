@@ -39,12 +39,11 @@
     $: perihDist = getDistance(apsis.perihelion);
     $: aphDist = getDistance(apsis.aphelion);
 
-    import { Text } from "@threlte/extras";
+    import BillboardText from "./BillboardText.svelte";
     import { currentDate } from "../stores";
 
     // Helper: Calculate oscillation factor based on time proximity
-    // Returns { scale: number, intensity: number }
-    // Window: +/- 12 hours (43200000 ms)
+    // ...
     function getOscillation(targetDate: Date, current: Date) {
         const diff = Math.abs(current.getTime() - targetDate.getTime());
         const window = 12 * 60 * 60 * 1000; // 12 hours
@@ -52,12 +51,8 @@
         if (diff > window) return { width: 1, colorScalar: 1, scale: 1 };
 
         // Linear interpolation from edge (0) to center (1)
-        // or Sine wave for smooth "breathing" if we wanted, but user wants peak at center.
-        // Let's use a bell-ish curve: (1 - diff/window)^2
         const proximity = Math.pow(1 - diff / window, 2);
 
-        // Target: Normal width 1 -> Peak 6
-        // Target: Brightness Normal -> Brighter (e.g. 2x intensity logic)
         return {
             width: 1 + proximity * 5, // 1 to 6
             colorScalar: 1 + proximity * 1, // 1x to 2x brightness (conceptually)
@@ -77,7 +72,6 @@
     <T.Line geometry={junSolGeo}>
         <T.LineBasicMaterial color="#FF5722" linewidth={junOsc.width} />
     </T.Line>
-    <!-- Glow visualizer for event moment (since lines might not thicken) -->
     {#if junOsc.width > 1.5}
         <T.Mesh
             position={[
@@ -90,7 +84,7 @@
             <T.MeshBasicMaterial color="#FF5722" transparent opacity={0.5} />
         </T.Mesh>
     {/if}
-    <Text
+    <BillboardText
         text={`Summer Solstice\n${junDist.toFixed(3)} AU`}
         position={[
             junSolGeo.getAttribute("position").getX(1),
@@ -98,10 +92,9 @@
             junSolGeo.getAttribute("position").getZ(1),
         ]}
         color="#FF5722"
-        fontSize={0.8 * junOsc.scale}
+        fontSize={0.4 * junOsc.scale}
         anchorX="center"
         anchorY="bottom"
-        billboard
     />
 
     <!-- December -->
@@ -120,7 +113,7 @@
             <T.MeshBasicMaterial color="#FF5722" transparent opacity={0.5} />
         </T.Mesh>
     {/if}
-    <Text
+    <BillboardText
         text={`Winter Solstice\n${decDist.toFixed(3)} AU`}
         position={[
             decSolGeo.getAttribute("position").getX(1),
@@ -128,10 +121,9 @@
             decSolGeo.getAttribute("position").getZ(1),
         ]}
         color="#FF5722"
-        fontSize={0.8 * decOsc.scale}
+        fontSize={0.4 * decOsc.scale}
         anchorX="center"
         anchorY="bottom"
-        billboard
     />
 
     <!-- Equinoxes (Green/Teal) -->
@@ -151,7 +143,7 @@
             <T.MeshBasicMaterial color="#00BCD4" transparent opacity={0.5} />
         </T.Mesh>
     {/if}
-    <Text
+    <BillboardText
         text={`Spring Equinox\n${marDist.toFixed(3)} AU`}
         position={[
             marEqGeo.getAttribute("position").getX(1),
@@ -159,10 +151,9 @@
             marEqGeo.getAttribute("position").getZ(1),
         ]}
         color="#00BCD4"
-        fontSize={0.8 * marOsc.scale}
+        fontSize={0.4 * marOsc.scale}
         anchorX="center"
         anchorY="bottom"
-        billboard
     />
 
     <!-- September -->
@@ -181,7 +172,7 @@
             <T.MeshBasicMaterial color="#00BCD4" transparent opacity={0.5} />
         </T.Mesh>
     {/if}
-    <Text
+    <BillboardText
         text={`Autumn Equinox\n${sepDist.toFixed(3)} AU`}
         position={[
             sepEqGeo.getAttribute("position").getX(1),
@@ -189,13 +180,12 @@
             sepEqGeo.getAttribute("position").getZ(1),
         ]}
         color="#00BCD4"
-        fontSize={0.8 * sepOsc.scale}
+        fontSize={0.4 * sepOsc.scale}
         anchorX="center"
         anchorY="bottom"
-        billboard
     />
 
-    <!-- Perihelion/Aphelion (unchanged logic) -->
+    <!-- Perihelion/Aphelion -->
     <T.Line geometry={perihGeo}>
         <T.LineDashedMaterial
             color="white"
@@ -204,7 +194,7 @@
             scale={1}
         />
     </T.Line>
-    <Text
+    <BillboardText
         text={`Perihelion (Min)\n${perihDist.toFixed(4)} AU`}
         position={[
             perihGeo.getAttribute("position").getX(1),
@@ -212,10 +202,9 @@
             perihGeo.getAttribute("position").getZ(1),
         ]}
         color="white"
-        fontSize={0.6}
+        fontSize={0.3}
         anchorX="center"
         anchorY="top"
-        billboard
     />
     <T.Line geometry={aphGeo}>
         <T.LineDashedMaterial
@@ -225,7 +214,7 @@
             scale={1}
         />
     </T.Line>
-    <Text
+    <BillboardText
         text={`Aphelion (Max)\n${aphDist.toFixed(4)} AU`}
         position={[
             aphGeo.getAttribute("position").getX(1),
@@ -233,9 +222,8 @@
             aphGeo.getAttribute("position").getZ(1),
         ]}
         color="white"
-        fontSize={0.6}
+        fontSize={0.3}
         anchorX="center"
         anchorY="top"
-        billboard
     />
 </T.Group>

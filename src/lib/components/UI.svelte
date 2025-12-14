@@ -5,6 +5,7 @@
     timeSpeed,
     observerLocation,
     viewMode,
+    cameraMode,
   } from "../stores";
   import { getSunTimes, getSeasons } from "../astronomy";
   import SkyView from "./SkyView.svelte";
@@ -87,6 +88,7 @@
       </div>
     </div>
 
+    <!-- ... rest of sidebar content ... -->
     <div class="controls-section">
       <h3>Controls</h3>
       <div class="control-group">
@@ -94,8 +96,6 @@
           {$isPlaying ? "Pause" : "Play"}
         </button>
       </div>
-
-      <!-- Old Year Progress Slider Removed -->
 
       <div class="control-group">
         <label>
@@ -127,13 +127,6 @@
           <CitySearch />
         </label>
       </div>
-
-      <!-- Keep presets as fallback? Or maybe remove them? 
-         User wanted to "connect to a free service... and have search input". 
-         I'll keep a few major presets below as a "Quick Select" or just remove the old select.
-         The old select was bulky. Let's replace it entirely but maybe keep "Quick Jump" buttons later if needed.
-         For now, full replacement as per request for "connection to service".
-    -->
 
       <div class="control-group coords">
         <label
@@ -262,7 +255,31 @@
         </li>
       </ul>
     </div>
+    <div class="control-group">
+      <label>
+        Projection:
+        <div class="toggle-group">
+          <button
+            class:active={$cameraMode === "orthographic"}
+            on:click={() => cameraMode.set("orthographic")}
+          >
+            Ortho
+          </button>
+          <button
+            class:active={$cameraMode === "perspective"}
+            on:click={() => cameraMode.set("perspective")}
+          >
+            Persp
+          </button>
+        </div>
+      </label>
+    </div>
   </aside>
+
+  <!-- Main View Area (3D Scene Slot) -->
+  <main class="main-view">
+    <slot />
+  </main>
 
   <!-- Timeline (Top Bar) -->
   <header class="timeline-bar">
@@ -290,7 +307,6 @@
       {/each}
 
       <!-- Colored Event Markers -->
-      <!-- Solstices: #FF5722, Equinoxes: #00BCD4 -->
       <div
         class="event-marker"
         style="left: {getEventPercent(
@@ -323,17 +339,11 @@
         title="December Solstice"
       ></div>
 
-      <!-- Interactive Slider Overlay -->
-      <!-- We use a custom handle div for visual precision (matching ticks), 
-           and an invisible range input for interaction -->
-
-      <!-- Custom Handle -->
       <div
         class="timeline-handle"
         style="left: {getEventPercent($currentDate)}%"
       ></div>
 
-      <!-- Invisible Interaction Layer -->
       <input
         type="range"
         class="timeline-slider interactive"
@@ -364,14 +374,24 @@
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
     display: grid;
-    grid-template-columns: 300px 1fr;
+    /* Updated column width to 360px */
+    grid-template-columns: 360px 1fr;
     grid-template-rows: 80px 1fr 250px;
     grid-template-areas:
       "sidebar timeline"
       "sidebar main"
       "sidebar footer";
+  }
+
+  /* Main View Area (for Slot) */
+  .main-view {
+    grid-area: main;
+    position: relative;
+    overflow: hidden;
+    /* Ensure it takes full space */
+    width: 100%;
+    height: 100%;
   }
 
   .sidebar {
@@ -523,8 +543,7 @@
   }
 
   input,
-  button,
-  select {
+  button {
     padding: 8px;
     border-radius: 4px;
     border: 1px solid #444;

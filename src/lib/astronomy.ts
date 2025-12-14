@@ -96,7 +96,7 @@ export function getSunTimes(date: Date, location: SphericalCoords) {
 
 // ... (existing code helpers)
 
-function getSubSolarLongitude(date: Date): number {
+export function getSubSolarLongitude(date: Date): number {
     // 1. Get Sun's position logic
     // We need the Greenwhich Apparent Sidereal Time (GAST) to know Earth's rotation
     const gast = Astronomy.SiderealTime(date);

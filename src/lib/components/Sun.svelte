@@ -2,10 +2,9 @@
     import { T, useLoader } from "@threlte/core";
     import { TextureLoader } from "three";
 
-    const texture = useLoader(TextureLoader).load("/sun_texture.png");
+    const texture = useLoader(TextureLoader).load("/sun_texture_nasa.jpg");
 </script>
 
-```
 {#await $texture then map}
     <T.Group>
         <!-- Sun Mesh -->
