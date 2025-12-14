@@ -21,44 +21,36 @@
 
     // Marker Position Logic
 
-    // Analysis strongly suggests the texture is WEB MERCATOR (not Plate Carrée).
-    // Symptom: Linear Lat (Plate Carrée) is "Too North" for London (51N).
-    // Explanation: Mercator stretches poles to infinity, so it "squashes" mid-latitudes
-    // nearer to the equator (relative to the full square map) compared to Linear.
-    // We must map Geodetic Latitude -> Mercator V -> Sphere Angle.
+    // 1. Texture Calibration Offsets (Degrees)
+    // Use these to manually shift the marker if the texture map is not perfectly aligned.
+    const latTextureOffset = 0.0;
+    const lonTextureOffset = 0.0;
 
-    $: latRad = MathUtils.degToRad($observerLocation.lat);
-    $: lonRad = MathUtils.degToRad($observerLocation.lon + 90);
+    $: latRad = MathUtils.degToRad($observerLocation.lat + latTextureOffset);
+    $: lonRad = MathUtils.degToRad(
+        $observerLocation.lon + 90 + lonTextureOffset,
+    );
 
-    // 1. Calculate Web Mercator Y (radians), clipped to standard range [-PI, PI]
-    // maxLat = 85.051129 deg
-    function getMercatorY(latR: number) {
-        // Clamp to max lat to avoid infinity
-        const maxLat = 85.05 * (Math.PI / 180);
-        const l = Math.max(Math.min(latR, maxLat), -maxLat);
-        return Math.log(Math.tan(Math.PI / 4 + l / 2));
-    }
+    // 2. Geodetic to Parametric Latitude Conversion (WGS84)
+    // This accounts for the Earth's flattening (oblate spheroid).
+    // The mesh is scaled by (1-f) in Y. To place the marker on the *surface* of this
+    // flattened mesh at the correct *Geodetic* latitude, we must use the Parametric Latitude (beta).
+    // Relation: tan(beta) = (1-f) * tan(geodetic_lat)
 
-    $: mercatorY = getMercatorY(latRad);
+    const f = WGS84.flattening;
+    const scaleY = 1 - f;
 
-    // 2. Normalize to V [0, 1] assuming square map (Range [-PI, PI])
-    $: v = 0.5 + mercatorY / (2 * Math.PI);
+    // Calculate Parametric Latitude (beta)
+    $: beta = Math.atan(scaleY * Math.tan(latRad));
 
-    // 3. Map V to Sphere Angle (Theta)
-    // Sphere maps V=0 to South Pole (-PI/2), V=1 to North Pole (+PI/2)
-    // theta = (v - 0.5) * PI
-    $: theta = (v - 0.5) * Math.PI;
-
-    // 4. Cartesian on UNIT Sphere (using Mercator-corrected angle)
-    // Note: theta is visual vertical angle from Equator (-PI/2 to PI/2)
-    $: markerY = Math.sin(theta);
-    $: r = Math.cos(theta);
+    // 3. Cartesian Coordinates on Unit Sphere (using Parametric Angle)
+    // When scaled by parent [1, scaleY, 1], this lands on the ellipsoid surface.
+    $: markerY = Math.sin(beta);
+    $: r = Math.cos(beta);
     $: markerX = r * Math.sin(lonRad);
     $: markerZ = r * Math.cos(lonRad);
 
-    // WGS84 Scale: Flattening factor. Three.js spheres are 1 radius.
-    const f = WGS84.flattening;
-    const scaleY = 1 - f;
+    // WGS84 Scale: Flattening scale for the Earth mesh
 </script>
 
 <T.Group position={[x, y, z]}>
