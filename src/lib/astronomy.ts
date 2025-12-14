@@ -81,13 +81,31 @@ export function getSunTimes(date: Date, location: SphericalCoords) {
 /**
  * Get solstices and equinoxes for a year.
  */
+/**
+ * Get solstices and equinoxes for a year with detailed info.
+ */
 export function getSeasons(year: number) {
     const seasons = Astronomy.Seasons(year);
+
+    const enrich = (date: Date, name: string) => {
+        const pos = Astronomy.HelioVector(Astronomy.Body.Earth, date);
+        // Calculate heliocentric longitude
+        // atan2(y, x) gives angle in radians. Convert to degrees.
+        // Range [-180, 180]. Normalize to [0, 360].
+        let lonDeg = Math.atan2(pos.y, pos.x) * (180 / Math.PI);
+        if (lonDeg < 0) lonDeg += 360;
+
+        return {
+            date: date,
+            longitude: lonDeg
+        };
+    };
+
     return {
-        marchEquinox: seasons.mar_equinox,
-        juneSolstice: seasons.jun_solstice,
-        sepEquinox: seasons.sep_equinox,
-        decSolstice: seasons.dec_solstice
+        marchEquinox: enrich(seasons.mar_equinox.date, "March Equinox"),
+        juneSolstice: enrich(seasons.jun_solstice.date, "June Solstice"),
+        sepEquinox: enrich(seasons.sep_equinox.date, "September Equinox"),
+        decSolstice: enrich(seasons.dec_solstice.date, "December Solstice")
     };
 }
 

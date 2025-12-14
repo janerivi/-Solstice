@@ -45,9 +45,9 @@
         <!-- Components -->
         <Sun />
 
-        <!-- Pass static year for path to prevent flickering during animation -->
-        <OrbitPath year={2025} />
-        <OrbitMarkers year={2025} />
+        <!-- Pass dynamic year -->
+        <OrbitPath year={$currentDate.getFullYear()} />
+        <OrbitMarkers year={$currentDate.getFullYear()} />
 
         <Earth x={earthPos.x} y={earthPos.y} z={earthPos.z} />
 

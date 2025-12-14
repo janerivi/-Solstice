@@ -12,7 +12,56 @@
   // Format date for display
   $: formattedDate = $currentDate.toLocaleString();
   $: sunTimes = getSunTimes($currentDate, $observerLocation);
+  // Timeline Logic
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  // Year boundaries
+  $: yearStart = new Date($currentDate.getFullYear(), 0, 1).getTime();
+  // Exact start of next year for full coverage
+  $: yearEnd = new Date($currentDate.getFullYear() + 1, 0, 1).getTime();
+  $: totalYearMs = yearEnd - yearStart;
+
+  function getMonthPosition(monthIndex: number) {
+    const start = new Date($currentDate.getFullYear(), monthIndex, 1).getTime();
+    return ((start - yearStart) / totalYearMs) * 100;
+  }
+
+  function getEventPercent(date: Date) {
+    return ((date.getTime() - yearStart) / totalYearMs) * 100;
+  }
   $: seasons = getSeasons($currentDate.getFullYear());
+
+  // Generate ticks for every day
+  // We calculated this reactively to year
+  $: dayTicks = (() => {
+    const year = $currentDate.getFullYear();
+    const ticks = [];
+    const start = new Date(year, 0, 1).getTime();
+    const end = new Date(year + 1, 0, 1).getTime();
+    const total = end - start;
+
+    let d = new Date(year, 0, 1);
+    while (d.getFullYear() === year) {
+      const pos = ((d.getTime() - start) / total) * 100;
+      // Tick type: 0=normal, 1=month-start (handled by div but we can add minor emphasis)
+      ticks.push(pos);
+      d.setDate(d.getDate() + 1);
+    }
+    return ticks;
+  })();
 
   function togglePlay() {
     isPlaying.update((v) => !v);
@@ -45,22 +94,7 @@
         </button>
       </div>
 
-      <div class="control-group">
-        <label>
-          Year Progress
-          <input
-            type="range"
-            min={new Date($currentDate.getFullYear(), 0, 1).getTime()}
-            max={new Date($currentDate.getFullYear(), 11, 31, 23, 59).getTime()}
-            value={$currentDate.getTime()}
-            on:input={(e) => {
-              const ts = parseInt(e.currentTarget.value);
-              currentDate.set(new Date(ts));
-            }}
-            step="3600000"
-          />
-        </label>
-      </div>
+      <!-- Old Year Progress Slider Removed -->
 
       <div class="control-group">
         <label>
@@ -131,13 +165,122 @@
     <div class="info-section">
       <h3>{new Date().getFullYear()} Events</h3>
       <ul>
-        <li>Mar Eq: {seasons.marchEquinox.date.toLocaleDateString()}</li>
-        <li>Jun Sol: {seasons.juneSolstice.date.toLocaleDateString()}</li>
-        <li>Sep Eq: {seasons.sepEquinox.date.toLocaleDateString()}</li>
-        <li>Dec Sol: {seasons.decSolstice.date.toLocaleDateString()}</li>
+        <li>
+          <strong>Mar Eq:</strong>
+          {seasons.marchEquinox.date.toLocaleString()} <br />
+          <span class="detail"
+            >Lon: {seasons.marchEquinox.longitude.toFixed(5)}°</span
+          >
+        </li>
+        <li>
+          <strong>Jun Sol:</strong>
+          {seasons.juneSolstice.date.toLocaleString()} <br />
+          <span class="detail"
+            >Lon: {seasons.juneSolstice.longitude.toFixed(5)}°</span
+          >
+        </li>
+        <li>
+          <strong>Sep Eq:</strong>
+          {seasons.sepEquinox.date.toLocaleString()} <br />
+          <span class="detail"
+            >Lon: {seasons.sepEquinox.longitude.toFixed(5)}°</span
+          >
+        </li>
+        <li>
+          <strong>Dec Sol:</strong>
+          {seasons.decSolstice.date.toLocaleString()} <br />
+          <span class="detail"
+            >Lon: {seasons.decSolstice.longitude.toFixed(5)}°</span
+          >
+        </li>
       </ul>
     </div>
   </aside>
+
+  <!-- Timeline (Top Bar) -->
+  <header class="timeline-bar">
+    <div class="timeline-track">
+      <!-- SVG Ticks for Precision -->
+      <svg class="ticks-svg" width="100%" height="100%">
+        {#each dayTicks as tick}
+          <line
+            x1="{tick}%"
+            y1="60%"
+            x2="{tick}%"
+            y2="100%"
+            stroke="rgba(255,255,255,0.15)"
+            stroke-width="1"
+          />
+        {/each}
+      </svg>
+
+      <!-- Month Labels and Ticks -->
+      {#each months as month, i}
+        <div class="month-label" style="left: {getMonthPosition(i)}%">
+          {month}
+        </div>
+        <div class="month-tick" style="left: {getMonthPosition(i)}%"></div>
+      {/each}
+
+      <!-- Colored Event Markers -->
+      <!-- Solstices: #FF5722, Equinoxes: #00BCD4 -->
+      <div
+        class="event-marker"
+        style="left: {getEventPercent(
+          seasons.marchEquinox.date,
+        )}%; background: #00BCD4;"
+        title="March Equinox"
+      ></div>
+
+      <div
+        class="event-marker"
+        style="left: {getEventPercent(
+          seasons.juneSolstice.date,
+        )}%; background: #FF5722;"
+        title="June Solstice"
+      ></div>
+
+      <div
+        class="event-marker"
+        style="left: {getEventPercent(
+          seasons.sepEquinox.date,
+        )}%; background: #00BCD4;"
+        title="September Equinox"
+      ></div>
+
+      <div
+        class="event-marker"
+        style="left: {getEventPercent(
+          seasons.decSolstice.date,
+        )}%; background: #FF5722;"
+        title="December Solstice"
+      ></div>
+
+      <!-- Interactive Slider Overlay -->
+      <!-- We use a custom handle div for visual precision (matching ticks), 
+           and an invisible range input for interaction -->
+
+      <!-- Custom Handle -->
+      <div
+        class="timeline-handle"
+        style="left: {getEventPercent($currentDate)}%"
+      ></div>
+
+      <!-- Invisible Interaction Layer -->
+      <input
+        type="range"
+        class="timeline-slider interactive"
+        min={yearStart}
+        max={yearEnd}
+        value={$currentDate.getTime()}
+        step="any"
+        on:input={(e) => {
+          const ts = parseFloat(e.currentTarget.value);
+          currentDate.set(new Date(ts));
+        }}
+      />
+    </div>
+  </header>
 
   <!-- Bottom Bar with Sky View -->
   <footer class="bottom-bar">
@@ -157,15 +300,16 @@
     pointer-events: none;
     display: grid;
     grid-template-columns: 300px 1fr;
-    grid-template-rows: 1fr 250px;
+    grid-template-rows: 80px 1fr 250px;
     grid-template-areas:
+      "sidebar timeline"
       "sidebar main"
       "sidebar footer";
   }
 
   .sidebar {
     grid-area: sidebar;
-    background: rgba(10, 10, 15, 0.85);
+    background: rgba(10, 10, 15, 0.9);
     backdrop-filter: blur(15px);
     padding: 20px;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -174,6 +318,92 @@
     display: flex;
     flex-direction: column;
     gap: 30px;
+    z-index: 10;
+  }
+
+  .timeline-bar {
+    grid-area: timeline;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .timeline-track {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    background: transparent;
+  }
+
+  .ticks-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .month-label {
+    position: absolute;
+    top: 5px;
+    font-size: 12px;
+    color: #ccc;
+    transform: translateX(5px); /* Offset slightly from line */
+    font-weight: bold;
+    pointer-events: none;
+  }
+
+  .month-tick {
+    position: absolute;
+    top: 25px;
+    bottom: 0;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+  }
+
+  .event-marker {
+    position: absolute;
+    top: 20px;
+    bottom: 5px;
+    width: 3px; /* Slightly thicker than ticks */
+    transform: translateX(-1.5px); /* Center */
+    pointer-events: none;
+    z-index: 2;
+    border-radius: 2px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5); /* Contrast */
+  }
+
+  .timeline-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #ff9800;
+    z-index: 6; /* On top of ticks/markers */
+    pointer-events: none;
+    transform: translateX(-50%); /* Center on the percent */
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(255, 152, 0, 0.5);
+  }
+
+  .timeline-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+    z-index: 10; /* Topmost for interaction */
+    opacity: 0; /* Fully transparent so we only see custom handle */
+    -webkit-appearance: none;
   }
 
   .bottom-bar {
@@ -253,6 +483,12 @@
     color: #bbb;
   }
   li {
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .detail {
+    font-size: 0.85em;
+    color: #888;
+    margin-left: 5px;
   }
 </style>
