@@ -12,14 +12,15 @@
             <T.SphereGeometry args={[1.5, 64, 64]} />
             <T.MeshStandardMaterial
                 {map}
-                emissive="orange"
-                emissiveIntensity={2}
-                color="yellow"
+                emissiveMap={map}
+                emissive="white"
+                emissiveIntensity={1}
+                color="white"
             />
         </T.Mesh>
 
         <!-- Light Source -->
-        <T.PointLight intensity={2} distance={0} decay={0} castShadow />
+        <T.PointLight intensity={3} distance={0} decay={0} castShadow />
         <T.AmbientLight intensity={0.1} />
     </T.Group>
 {/await}
