@@ -99,14 +99,24 @@
 
       <div class="control-group">
         <label>
-          Speed: {$timeSpeed.toFixed(2)} days/s
-          <input
-            type="range"
-            min="0.01"
-            max="100"
-            step="0.01"
-            bind:value={$timeSpeed}
-          />
+          Speed (days/s):
+          <div class="speed-row">
+            <input
+              type="range"
+              min="0.01"
+              max="100"
+              step="0.01"
+              bind:value={$timeSpeed}
+            />
+            <input
+              type="number"
+              class="speed-number"
+              min="0.01"
+              max="100"
+              step="0.01"
+              bind:value={$timeSpeed}
+            />
+          </div>
         </label>
       </div>
 
@@ -540,6 +550,14 @@
   .control-group.coords {
     flex-direction: row;
     gap: 10px;
+  }
+  .speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .speed-number {
+    width: 80px;
   }
 
   input,

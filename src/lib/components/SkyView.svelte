@@ -13,16 +13,17 @@
         ? getSunPosition(sunTimes.sunset, $observerLocation).azimuth
         : null;
 
-    // Background color based on altitude (Day/Night)
-    $: isDay = sunPos.altitude > 0;
-    $: skyColor = isDay ? "#87CEEB" : "#0B1026";
+    // Background interpolation
+    $: dayIntensity = Math.min(
+        Math.max(0, sunPos.altitude / (dayMaxAlt || 45)),
+        1,
+    );
 
     // Plot parameters
     const padding = { top: 20, right: 30, bottom: 30, left: 40 };
 
     let clientWidth = 300;
     let clientHeight = 150;
-
     // Scales
     // X-Axis: Time (0 to 24 hours in minutes) -> 0 to clientWidth
     $: scaleX = (minutes: number) =>
@@ -171,20 +172,35 @@
     <svg width="100%" height="100%">
         <!-- Gradient Definition -->
         <defs>
-            <linearGradient id="skyGradientLin" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stop-color={isDay ? "#4a90e2" : "#000022"} />
-                <stop offset="100%" stop-color={isDay ? "#87CEEB" : "#111"} />
+            <linearGradient id="nightGradient" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#000022" />
+                <stop offset="100%" stop-color="#111" />
+            </linearGradient>
+            <linearGradient id="dayGradient" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#4a90e2" />
+                <stop offset="100%" stop-color="#87CEEB" />
             </linearGradient>
         </defs>
 
-        <!-- Background -->
+        <!-- Background Layers -->
+        <!-- Night Layer (Always there, bottom) -->
         <rect
             x={padding.left}
             y={padding.top}
             width={Math.max(0, clientWidth - padding.left - padding.right)}
             height={Math.max(0, clientHeight - padding.top - padding.bottom)}
-            fill="url(#skyGradientLin)"
+            fill="url(#nightGradient)"
             stroke="#444"
+        />
+
+        <!-- Day Layer (Fades in) -->
+        <rect
+            x={padding.left}
+            y={padding.top}
+            width={Math.max(0, clientWidth - padding.left - padding.right)}
+            height={Math.max(0, clientHeight - padding.top - padding.bottom)}
+            fill="url(#dayGradient)"
+            opacity={dayIntensity}
         />
 
         <!-- Horizon Line (0 deg Alt) -->
@@ -358,7 +374,7 @@
         <circle
             cx={sunX}
             cy={sunY}
-            r={isDay ? 6 : 4}
+            r={sunPos.altitude > 0 ? 6 : 4}
             fill="yellow"
             stroke="orange"
             stroke-width="2"
