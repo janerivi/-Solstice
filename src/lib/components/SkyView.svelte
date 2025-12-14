@@ -34,14 +34,36 @@
     let dayMaxAlt = 45; // Default safe max
     let dayMinAlt = -15; // Default safe min
 
-    function formatTime(d: Date | null) {
+    // Approximate Local Mean Time from Longitude
+    function formatLocalTime(d: Date | null, lon: number) {
         if (!d) return "";
-        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        // 15 degrees = 1 hour
+        const offsetMs = (lon / 15) * 3600 * 1000;
+        const localDate = new Date(d.getTime() + offsetMs);
+        // Use UTC methods on the shifted date to get the "face value" time
+        return localDate.toISOString().slice(11, 16);
+    }
+
+    // Get the UTC timestamp for the start of the local day (00:00 Local Time)
+    function getLocalMidnight(d: Date, lon: number) {
+        const offsetMs = (lon / 15) * 3600 * 1000;
+        const currentLocal = new Date(d.getTime() + offsetMs);
+
+        // Floor to midnight using UTC components (since it's a shifted date)
+        currentLocal.setUTCHours(0, 0, 0, 0);
+
+        // Shift back to real UTC
+        return new Date(currentLocal.getTime() - offsetMs);
     }
 
     $: {
-        const d = new Date($currentDate);
-        d.setHours(0, 0, 0, 0);
+        // Determine the start of the day relative to the observer's longitude
+        // to ensure we plot 00:00 to 24:00 LOCAL time.
+        const startOfDay = getLocalMidnight(
+            $currentDate,
+            $observerLocation.lon,
+        );
+
         pathD = "";
 
         let lastAz = -1;
@@ -52,7 +74,7 @@
 
         // Iterate through day in 15 min intervals
         for (let m = 0; m <= 24 * 60; m += 15) {
-            const time = new Date(d.getTime() + m * 60000);
+            const time = new Date(startOfDay.getTime() + m * 60000);
             const pos = getSunPosition(time, $observerLocation);
 
             // Track Max/Min Alt for Auto-Scale
@@ -64,11 +86,8 @@
         dayMaxAlt = Math.max(currentMaxAlt + 10, 20); // At least show up to 20 deg
         dayMinAlt = Math.min(currentMinAlt - 10, -25); // At least down to -25 for labels
 
-        // Re-iterate to draw path with new scales
-        // We can't use scaleX/scaleY inside the loop if they depend on dayMaxAlt which is set after loop.
-        // So we need to set dayMaxAlt/dayMinAlt separately or reactively.
-        // Since this block is reactive, setting dayMaxAlt will trigger re-run? No, not if it's local var.
-        // We need dayMaxAlt/dayMinAlt to be component state.
+        // Update scales
+        // (Scales are updated reactively below via local vars)
     }
 
     // Scales updated to use dynamic dayMaxAlt/dayMinAlt
@@ -87,10 +106,13 @@
     $: setX = setAz !== null ? scaleX(setAz) : null;
     $: horizonY = scaleY(0);
 
-    // Re-calc Path with new scales
+    // Re-calc Path and Markers with new scales
     $: {
-        const d = new Date($currentDate);
-        d.setHours(0, 0, 0, 0);
+        const startOfDay = getLocalMidnight(
+            $currentDate,
+            $observerLocation.lon,
+        );
+
         pathD = "";
         let lastAz = -1;
         let segmentStart = true;
@@ -98,7 +120,7 @@
         let maxAltData = null;
 
         for (let m = 0; m <= 24 * 60; m += 15) {
-            const time = new Date(d.getTime() + m * 60000);
+            const time = new Date(startOfDay.getTime() + m * 60000);
             const pos = getSunPosition(time, $observerLocation);
 
             const x = scaleX(pos.azimuth);
@@ -111,11 +133,13 @@
                     y,
                     alt: pos.altitude,
                     az: pos.azimuth,
-                    time: formatTime(time),
+                    time: formatLocalTime(time, $observerLocation.lon),
                 };
             }
 
             // Draw Path
+            // Break path if it wraps around N (0/360)?
+            // Azimuth jumps 359 -> 1. Math.abs > 180 checks this.
             if (!segmentStart && Math.abs(pos.azimuth - lastAz) > 180) {
                 pathD += ` M ${x} ${y}`;
             } else if (segmentStart) {
@@ -272,7 +296,11 @@
                 font-size="11"
                 fill="orange"
                 text-anchor="middle"
-                dy="8">{formatTime(sunTimes.sunrise)}</text
+                dy="8"
+                >{formatLocalTime(
+                    sunTimes.sunrise,
+                    $observerLocation.lon,
+                )}</text
             >
             <text
                 x={riseX}
@@ -309,7 +337,8 @@
                 font-size="11"
                 fill="orange"
                 text-anchor="middle"
-                dy="8">{formatTime(sunTimes.sunset)}</text
+                dy="8"
+                >{formatLocalTime(sunTimes.sunset, $observerLocation.lon)}</text
             >
             <text
                 x={setX}
@@ -334,6 +363,9 @@
     <div class="info">
         <span>Az: {sunPos.azimuth.toFixed(2)}°</span>
         <span>Alt: {sunPos.altitude.toFixed(2)}°</span>
+        <span style="color: yellow;"
+            >Time: {formatLocalTime($currentDate, $observerLocation.lon)} (Local)</span
+        >
     </div>
 </div>
 
