@@ -1,9 +1,21 @@
 <script lang="ts">
     import { T, useLoader } from "@threlte/core";
-    import { MathUtils, TextureLoader, AdditiveBlending } from "three";
+    import { Text, Billboard } from "@threlte/extras";
+    import {
+        MathUtils,
+        TextureLoader,
+        AdditiveBlending,
+        DoubleSide,
+        Quaternion,
+        Vector3,
+    } from "three";
     import { WGS84, getObliquity, getEarthRotation } from "../astronomy";
-    import { currentDate, observerLocation } from "../stores";
+    import { currentDate, observerLocation, observerName } from "../stores";
     import SolarNoonLine from "./SolarNoonLine.svelte";
+
+    // ... (rest of imports/exports)
+
+    // (After marker calculations, around line 66)
 
     export let x = 0;
     export let y = 0;
@@ -62,6 +74,34 @@
     $: markerX = r * Math.sin(lonRad);
     $: markerZ = r * Math.cos(lonRad);
 
+    $: labelContent = $observerName
+        ? `${$observerName} ${$observerLocation.lat.toFixed(2)}°, ${$observerLocation.lon.toFixed(2)}°`
+        : `${$observerLocation.lat.toFixed(2)}°, ${$observerLocation.lon.toFixed(2)}°`;
+
+    // 4. Geodetic Normal Vector (for perpendicular line)
+    // The surface normal depends on Geodetic Latitude (latRad), not Parametric (beta).
+    // Note: lonRad already includes the +90 degree phase shift used in marker calculation.
+    $: nY = Math.sin(latRad);
+    $: nRr = Math.cos(latRad);
+    $: nX = nRr * Math.sin(lonRad);
+    $: nZ = nRr * Math.cos(lonRad);
+
+    // Surface Position (accounting for flattening on Y)
+    $: surfaceY = markerY * scaleY;
+
+    // Use Quaternion to align local +Z (Line) with Surface Normal.
+    const upVec = new Vector3(0, 0, 1);
+
+    let pinQuatArray: [number, number, number, number] = [0, 0, 0, 1];
+
+    $: {
+        const q = new Quaternion().setFromUnitVectors(
+            upVec,
+            new Vector3(nX, nY, nZ).normalize(),
+        );
+        pinQuatArray = [q.x, q.y, q.z, q.w];
+    }
+
     // WGS84 Scale: Flattening scale for the Earth mesh
 </script>
 
@@ -93,6 +133,39 @@
                 <T.SphereGeometry args={[0.02, 16, 16]} />
                 <T.MeshBasicMaterial color="red" />
             </T.Mesh>
+
+            <!-- Pin and Billboard Label -->
+            <!-- Position: Use calculated surface coords directly (no parent scale applied here) -->
+            <T.Group
+                position={[markerX, surfaceY, markerZ]}
+                quaternion={pinQuatArray}
+            >
+                <!-- 
+                    Local Coords:
+                    +Z is now aligned with Geodetic Normal (Perpendicular).
+                -->
+
+                <!-- The "Pole" Line 
+                     Height 1 (1 Earth Radius).
+                     Position z=0.5 so it extends from 0 to 1.
+                     Rotate X 90deg to align Cylinder (default Y) with Z.
+                -->
+                <T.Mesh position={[0, 0, 0.5]} rotation.x={Math.PI / 2}>
+                    <T.CylinderGeometry args={[0.002, 0.002, 1, 8]} />
+                    <T.MeshBasicMaterial color="red" />
+                </T.Mesh>
+
+                <!-- Billboard at the end of the line (z=1) -->
+                <Billboard position={[0, 0, 1]}>
+                    <Text
+                        text={labelContent}
+                        color="red"
+                        fontSize={0.2}
+                        anchorX="center"
+                        anchorY="middle"
+                    />
+                </Billboard>
+            </T.Group>
 
             <!-- Axis Visualizer (Pole) -->
             <T.Mesh position={[0, 1.2, 0]}>
