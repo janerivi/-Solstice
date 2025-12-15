@@ -95,6 +95,7 @@
         fontSize={0.4 * junOsc.scale}
         anchorX="center"
         anchorY="bottom"
+        on:click={() => currentDate.set(seasons.juneSolstice.date)}
     />
 
     <!-- December -->
@@ -124,6 +125,7 @@
         fontSize={0.4 * decOsc.scale}
         anchorX="center"
         anchorY="bottom"
+        on:click={() => currentDate.set(seasons.decSolstice.date)}
     />
 
     <!-- Equinoxes (Green/Teal) -->
@@ -154,6 +156,7 @@
         fontSize={0.4 * marOsc.scale}
         anchorX="center"
         anchorY="bottom"
+        on:click={() => currentDate.set(seasons.marchEquinox.date)}
     />
 
     <!-- September -->
@@ -183,6 +186,7 @@
         fontSize={0.4 * sepOsc.scale}
         anchorX="center"
         anchorY="bottom"
+        on:click={() => currentDate.set(seasons.sepEquinox.date)}
     />
 
     <!-- Perihelion/Aphelion -->
@@ -205,6 +209,7 @@
         fontSize={0.3}
         anchorX="center"
         anchorY="top"
+        on:click={() => currentDate.set(apsis.perihelion)}
     />
     <T.Line geometry={aphGeo}>
         <T.LineDashedMaterial
@@ -225,5 +230,6 @@
         fontSize={0.3}
         anchorX="center"
         anchorY="top"
+        on:click={() => currentDate.set(apsis.aphelion)}
     />
 </T.Group>

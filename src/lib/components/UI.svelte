@@ -152,7 +152,14 @@
       <h3>{new Date().getFullYear()} Events</h3>
       <ul class="event-list">
         <li>
-          <div class="event-header">
+          <div
+            class="event-header clickable"
+            on:click={() => currentDate.set(seasons.marchEquinox.date)}
+            tabindex="0"
+            role="button"
+            on:keydown={(e) =>
+              e.key === "Enter" && currentDate.set(seasons.marchEquinox.date)}
+          >
             <strong>Mar Eq:</strong>
             {seasons.marchEquinox.date.toLocaleString()}
           </div>
@@ -180,7 +187,14 @@
           </div>
         </li>
         <li>
-          <div class="event-header">
+          <div
+            class="event-header clickable"
+            on:click={() => currentDate.set(seasons.juneSolstice.date)}
+            tabindex="0"
+            role="button"
+            on:keydown={(e) =>
+              e.key === "Enter" && currentDate.set(seasons.juneSolstice.date)}
+          >
             <strong>Jun Sol:</strong>
             {seasons.juneSolstice.date.toLocaleString()}
           </div>
@@ -208,7 +222,14 @@
           </div>
         </li>
         <li>
-          <div class="event-header">
+          <div
+            class="event-header clickable"
+            on:click={() => currentDate.set(seasons.sepEquinox.date)}
+            tabindex="0"
+            role="button"
+            on:keydown={(e) =>
+              e.key === "Enter" && currentDate.set(seasons.sepEquinox.date)}
+          >
             <strong>Sep Eq:</strong>
             {seasons.sepEquinox.date.toLocaleString()}
           </div>
@@ -236,7 +257,14 @@
           </div>
         </li>
         <li>
-          <div class="event-header">
+          <div
+            class="event-header clickable"
+            on:click={() => currentDate.set(seasons.decSolstice.date)}
+            tabindex="0"
+            role="button"
+            on:keydown={(e) =>
+              e.key === "Enter" && currentDate.set(seasons.decSolstice.date)}
+          >
             <strong>Dec Sol:</strong>
             {seasons.decSolstice.date.toLocaleString()}
           </div>
@@ -608,6 +636,15 @@
   .event-header {
     margin-bottom: 4px;
     font-size: 0.95em;
+  }
+  .event-header.clickable {
+    cursor: pointer;
+    color: #ffd700;
+    transition: color 0.2s;
+  }
+  .event-header.clickable:hover {
+    color: #ff9800;
+    text-decoration: underline;
   }
 
   .event-body {

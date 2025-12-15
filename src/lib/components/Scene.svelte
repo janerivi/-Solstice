@@ -2,12 +2,14 @@
     import { Canvas } from "@threlte/core";
     import { T } from "@threlte/core";
     import { OrbitControls } from "@threlte/extras";
-    import { get } from "svelte/store";
+
     import Sun from "./Sun.svelte";
     import Earth from "./Earth.svelte";
     import OrbitPath from "./OrbitPath.svelte";
     import OrbitManager from "./OrbitManager.svelte";
     import OrbitMarkers from "./OrbitMarkers.svelte";
+    import InteractivitySetup from "./InteractivitySetup.svelte";
+    import Skybox from "./Skybox.svelte";
     import { getEarthOrbitPosition } from "../astronomy";
     // Stores used for reactivity
     import { currentDate, cameraMode } from "../stores";
@@ -28,11 +30,18 @@
     }
 </script>
 
+```html
 <div class="scene-container">
     <Canvas shadows>
+        <InteractivitySetup />
         {#if $cameraMode === "perspective"}
             <!-- Rotated 90 degrees: viewing from X axis [40, 20, 0] instead of Z [0, 20, 40] -->
-            <T.PerspectiveCamera makeDefault position={[40, 20, 0]} fov={45}>
+            <T.PerspectiveCamera
+                makeDefault
+                position={[40, 20, 0]}
+                fov={45}
+                far={2000}
+            >
                 <OrbitControls enableDamping />
             </T.PerspectiveCamera>
         {:else}
@@ -41,8 +50,8 @@
                 makeDefault
                 position={[40, 20, 0]}
                 zoom={35}
-                near={-100}
-                far={100}
+                near={-1000}
+                far={2000}
             >
                 <OrbitControls enableDamping />
             </T.OrthographicCamera>
@@ -56,7 +65,7 @@
         <OrbitMarkers year={$currentDate.getFullYear()} />
         <Earth x={earthPos.x} y={earthPos.y} z={earthPos.z} />
 
-        <T.GridHelper args={[100, 100, 0x222222, 0x111111]} />
+        <Skybox />
     </Canvas>
 </div>
 
