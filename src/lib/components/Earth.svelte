@@ -26,7 +26,7 @@
     const specularMap = useLoader(TextureLoader).load("/earth_specular.jpg");
     const clouds = useLoader(TextureLoader).load("/earth_clouds.jpg");
 
-    const obliquityRad = MathUtils.degToRad(getObliquity());
+    const obliquityRad = MathUtils.degToRad(-getObliquity());
 
     // Calculate rotation based on Sidereal Time
     // Three.js Y rotation +Z is 0?
@@ -121,7 +121,7 @@
                     roughnessMap={$bumpMap}
                     metalnessMap={$specularMap}
                     metalness={0.6}
-                    roughness={4}
+                    roughness={0.5}
                 />
             </T.Mesh>
 

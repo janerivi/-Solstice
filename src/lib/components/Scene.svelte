@@ -57,10 +57,10 @@
             </T.OrthographicCamera>
         {/if}
 
-        <T.AmbientLight intensity={0.1} />
+        <!-- <T.AmbientLight intensity={0.1} /> -->
 
         <OrbitManager />
-        <Sun />
+        <Sun earthPosition={earthPos} />
         <OrbitPath year={$currentDate.getFullYear()} />
         <OrbitMarkers year={$currentDate.getFullYear()} />
         <Earth x={earthPos.x} y={earthPos.y} z={earthPos.z} />
