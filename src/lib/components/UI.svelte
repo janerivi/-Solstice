@@ -4,6 +4,7 @@
     isPlaying,
     timeSpeed,
     observerLocation,
+    observerName,
     viewMode,
     cameraMode,
   } from "../stores";
@@ -140,10 +141,18 @@
 
       <div class="control-group coords">
         <label
-          >Lat <input type="number" bind:value={$observerLocation.lat} /></label
+          >Lat <input
+            type="number"
+            bind:value={$observerLocation.lat}
+            on:input={() => observerName.set(null)}
+          /></label
         >
         <label
-          >Lon <input type="number" bind:value={$observerLocation.lon} /></label
+          >Lon <input
+            type="number"
+            bind:value={$observerLocation.lon}
+            on:input={() => observerName.set(null)}
+          /></label
         >
       </div>
     </div>
@@ -168,8 +177,10 @@
               {#each seasons.marchEquinox.closestCities as city}
                 <button
                   class="city-link"
-                  on:click={() =>
-                    observerLocation.set({ lat: city.lat, lon: city.lon })}
+                  on:click={() => {
+                    observerLocation.set({ lat: city.lat, lon: city.lon });
+                    observerName.set(city.name);
+                  }}
                   title="Jump to {city.name}"
                 >
                   {city.name}
@@ -203,8 +214,10 @@
               {#each seasons.juneSolstice.closestCities as city}
                 <button
                   class="city-link"
-                  on:click={() =>
-                    observerLocation.set({ lat: city.lat, lon: city.lon })}
+                  on:click={() => {
+                    observerLocation.set({ lat: city.lat, lon: city.lon });
+                    observerName.set(city.name);
+                  }}
                   title="Jump to {city.name}"
                 >
                   {city.name}
@@ -238,8 +251,10 @@
               {#each seasons.sepEquinox.closestCities as city}
                 <button
                   class="city-link"
-                  on:click={() =>
-                    observerLocation.set({ lat: city.lat, lon: city.lon })}
+                  on:click={() => {
+                    observerLocation.set({ lat: city.lat, lon: city.lon });
+                    observerName.set(city.name);
+                  }}
                   title="Jump to {city.name}"
                 >
                   {city.name}
@@ -273,8 +288,10 @@
               {#each seasons.decSolstice.closestCities as city}
                 <button
                   class="city-link"
-                  on:click={() =>
-                    observerLocation.set({ lat: city.lat, lon: city.lon })}
+                  on:click={() => {
+                    observerLocation.set({ lat: city.lat, lon: city.lon });
+                    observerName.set(city.name);
+                  }}
                   title="Jump to {city.name}"
                 >
                   {city.name}

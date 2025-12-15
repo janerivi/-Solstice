@@ -24,7 +24,7 @@
     $: if ($cameraMode === "orthographic") {
         // Shrink sphere to increase texture density on screen
         // Camera is at dist ~45, so radius 25 ensures we are inside
-        scale = 0.05; // 500 * 0.05 = 25
+        scale = 0.08; // 500 * 0.05 = 25
     } else {
         scale = 1; // 500
     }

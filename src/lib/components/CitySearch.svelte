@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { observerLocation } from "../stores";
+    import { observerLocation, observerName } from "../stores";
 
     let query = "";
     let results: any[] = [];
@@ -52,6 +52,7 @@
 
     function selectCity(city: any) {
         observerLocation.set({ lat: city.latitude, lon: city.longitude });
+        observerName.set(city.name);
         query = `${city.name}, ${city.country_code.toUpperCase()}`;
         showDropdown = false;
         results = []; // Clear results to prevent reopening on accidental focus

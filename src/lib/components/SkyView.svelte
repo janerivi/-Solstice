@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { currentDate, observerLocation } from "../stores";
+    import { currentDate, observerLocation, observerName } from "../stores";
     import { getSunPosition, getSunTimes } from "../astronomy";
+    import { MAJOR_CITIES } from "../cities";
 
     $: sunPos = getSunPosition($currentDate, $observerLocation);
     $: sunTimes = getSunTimes($currentDate, $observerLocation);
@@ -12,6 +13,19 @@
     $: setAz = sunTimes.sunset
         ? getSunPosition(sunTimes.sunset, $observerLocation).azimuth
         : null;
+
+    $: selectedCity = MAJOR_CITIES.find(
+        (c) =>
+            Math.abs(c.lat - $observerLocation.lat) < 0.01 &&
+            Math.abs(c.lon - $observerLocation.lon) < 0.01,
+    );
+
+    $: displayCityName =
+        $observerName || (selectedCity ? selectedCity.name : null);
+
+    $: locationLabel = displayCityName
+        ? `${displayCityName} (${$observerLocation.lat.toFixed(2)}°, ${$observerLocation.lon.toFixed(2)}°)`
+        : `${$observerLocation.lat.toFixed(2)}°, ${$observerLocation.lon.toFixed(2)}°`;
 
     // Background interpolation
     $: dayIntensity = Math.min(
@@ -169,6 +183,7 @@
 
 <div class="sky-view-container" bind:clientWidth bind:clientHeight>
     <h4>Horizon View</h4>
+    <div class="location-label">{locationLabel}</div>
     <svg width="100%" height="100%">
         <!-- Gradient Definition -->
         <defs>
@@ -403,9 +418,14 @@
         flex-direction: column;
     }
     h4 {
-        margin: 5px 0;
+        margin: 5px 0 2px 0;
         font-weight: 400;
         font-size: 0.9em;
+    }
+    .location-label {
+        font-size: 0.75em;
+        color: #aaa;
+        margin-bottom: 5px;
     }
     svg {
         flex: 1;
