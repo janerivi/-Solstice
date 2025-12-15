@@ -188,7 +188,7 @@
                 <T.MeshStandardMaterial
                     map={$clouds}
                     transparent
-                    opacity={0.75}
+                    opacity={0.7}
                 />
             </T.Mesh>
         </T.Group>
