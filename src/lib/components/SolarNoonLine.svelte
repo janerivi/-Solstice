@@ -6,8 +6,8 @@
     import { MathUtils } from "three";
 
     // Create the semi-circle geometry (Meridian arc from North to South)
-    // Radius 1.01 to float clearly above Earth surface (radius 1)
-    const radius = 1.01;
+    // Radius 1.04 to float clearly above Earth surface (radius 1) and clouds (radius 1.02)
+    const radius = 1.04;
     const points = [];
     for (let i = 0; i <= 32; i++) {
         const lat = MathUtils.degToRad(90 - (i / 32) * 180); // 90 to -90
