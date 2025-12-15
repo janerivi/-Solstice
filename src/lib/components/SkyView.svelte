@@ -2,6 +2,12 @@
     import { currentDate, observerLocation, observerName } from "../stores";
     import { getSunPosition, getSunTimes } from "../astronomy";
     import { MAJOR_CITIES } from "../cities";
+    import {
+        formatLocalTime,
+        getLocalMinutesFromMidnight,
+        getLocalMidnightDate,
+        getTimeZone,
+    } from "../time";
 
     $: sunPos = getSunPosition($currentDate, $observerLocation);
     $: sunTimes = getSunTimes($currentDate, $observerLocation);
@@ -23,9 +29,11 @@
     $: displayCityName =
         $observerName || (selectedCity ? selectedCity.name : null);
 
+    $: timeZoneId = getTimeZone($observerLocation.lat, $observerLocation.lon);
+
     $: locationLabel = displayCityName
-        ? `${displayCityName} (${$observerLocation.lat.toFixed(2)}°, ${$observerLocation.lon.toFixed(2)}°)`
-        : `${$observerLocation.lat.toFixed(2)}°, ${$observerLocation.lon.toFixed(2)}°`;
+        ? `${displayCityName} (${$observerLocation.lat.toFixed(2)}°, ${$observerLocation.lon.toFixed(2)}°) [${timeZoneId}]`
+        : `${$observerLocation.lat.toFixed(2)}°, ${$observerLocation.lon.toFixed(2)}° [${timeZoneId}]`;
 
     // Background interpolation
     $: dayIntensity = Math.min(
@@ -50,41 +58,14 @@
     let dayMaxAlt = 45; // Default safe max
     let dayMinAlt = -15; // Default safe min
 
-    // Approximate Local Mean Time from Longitude
-    function formatLocalTime(d: Date | null, lon: number) {
-        if (!d) return "";
-        // 15 degrees = 1 hour
-        const offsetMs = (lon / 15) * 3600 * 1000;
-        const localDate = new Date(d.getTime() + offsetMs);
-        // Use UTC methods on the shifted date to get the "face value" time
-        return localDate.toISOString().slice(11, 16);
-    }
-
-    // Get Minutes from start of local day
-    function getMinutesFromMidnight(d: Date, lon: number) {
-        if (!d) return 0;
-        const offsetMs = (lon / 15) * 3600 * 1000;
-        const localDate = new Date(d.getTime() + offsetMs);
-        return localDate.getUTCHours() * 60 + localDate.getUTCMinutes();
-    }
-
-    // Get the UTC timestamp for the start of the local day (00:00 Local Time)
-    function getLocalMidnight(d: Date, lon: number) {
-        const offsetMs = (lon / 15) * 3600 * 1000;
-        const currentLocal = new Date(d.getTime() + offsetMs);
-
-        // Floor to midnight using UTC components (since it's a shifted date)
-        currentLocal.setUTCHours(0, 0, 0, 0);
-
-        // Shift back to real UTC
-        return new Date(currentLocal.getTime() - offsetMs);
-    }
+    // --- REPLACED LOCAL TIME FUNCTIONS WITH IMPORTS ---
 
     $: {
-        // Determine the start of the day relative to the observer's longitude
+        // Determine the start of the day relative to the observer's Time Zone
         // to ensure we plot 00:00 to 24:00 LOCAL time.
-        const startOfDay = getLocalMidnight(
+        const startOfDay = getLocalMidnightDate(
             $currentDate,
+            $observerLocation.lat,
             $observerLocation.lon,
         );
 
@@ -123,25 +104,40 @@
 
     // Sun X is now based on current time minutes
     $: sunX = scaleX(
-        getMinutesFromMidnight($currentDate, $observerLocation.lon),
+        getLocalMinutesFromMidnight(
+            $currentDate,
+            $observerLocation.lat,
+            $observerLocation.lon,
+        ),
     );
     $: sunY = scaleY(sunPos.altitude);
 
     $: riseX = sunTimes.sunrise
         ? scaleX(
-              getMinutesFromMidnight(sunTimes.sunrise, $observerLocation.lon),
+              getLocalMinutesFromMidnight(
+                  sunTimes.sunrise,
+                  $observerLocation.lat,
+                  $observerLocation.lon,
+              ),
           )
         : null;
     $: setX = sunTimes.sunset
-        ? scaleX(getMinutesFromMidnight(sunTimes.sunset, $observerLocation.lon))
+        ? scaleX(
+              getLocalMinutesFromMidnight(
+                  sunTimes.sunset,
+                  $observerLocation.lat,
+                  $observerLocation.lon,
+              ),
+          )
         : null;
 
     $: horizonY = scaleY(0);
 
     // Re-calc Path and Markers with new scales
     $: {
-        const startOfDay = getLocalMidnight(
+        const startOfDay = getLocalMidnightDate(
             $currentDate,
+            $observerLocation.lat,
             $observerLocation.lon,
         );
 
@@ -164,7 +160,11 @@
                     y,
                     alt: pos.altitude,
                     az: pos.azimuth,
-                    time: formatLocalTime(time, $observerLocation.lon),
+                    time: formatLocalTime(
+                        time,
+                        $observerLocation.lat,
+                        $observerLocation.lon,
+                    ),
                 };
             }
 
@@ -334,6 +334,7 @@
                 dy="8"
                 >{formatLocalTime(
                     sunTimes.sunrise,
+                    $observerLocation.lat,
                     $observerLocation.lon,
                 )}</text
             >
@@ -373,7 +374,11 @@
                 fill="orange"
                 text-anchor="middle"
                 dy="8"
-                >{formatLocalTime(sunTimes.sunset, $observerLocation.lon)}</text
+                >{formatLocalTime(
+                    sunTimes.sunset,
+                    $observerLocation.lat,
+                    $observerLocation.lon,
+                )}</text
             >
             <text
                 x={setX}
@@ -399,7 +404,14 @@
         <span>Az: {sunPos.azimuth.toFixed(2)}°</span>
         <span>Alt: {sunPos.altitude.toFixed(2)}°</span>
         <span style="color: yellow;"
-            >Time: {formatLocalTime($currentDate, $observerLocation.lon)} (Local)</span
+            >Time: {formatLocalTime(
+                $currentDate,
+                $observerLocation.lat,
+                $observerLocation.lon,
+            )} (Local ({getTimeZone(
+                $observerLocation.lat,
+                $observerLocation.lon,
+            )}))</span
         >
     </div>
 </div>
