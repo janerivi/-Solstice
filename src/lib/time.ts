@@ -16,7 +16,7 @@ export function getTimeZone(lat: number, lon: number): string {
 /**
  * Formats a date to HH:mm string in the local time of the given coordinates.
  */
-export function formatLocalTime(date: Date, lat: number, lon: number): string {
+export function formatLocalTime(date: Date | null, lat: number, lon: number): string {
     if (!date) return '';
     const timeZone = getTimeZone(lat, lon);
     return new Intl.DateTimeFormat('en-GB', {
@@ -30,7 +30,7 @@ export function formatLocalTime(date: Date, lat: number, lon: number): string {
 /**
  * Returns the number of minutes since midnight in the local time of the given coordinates.
  */
-export function getLocalMinutesFromMidnight(date: Date, lat: number, lon: number): number {
+export function getLocalMinutesFromMidnight(date: Date | null, lat: number, lon: number): number {
     if (!date) return 0;
     const timeZone = getTimeZone(lat, lon);
 
