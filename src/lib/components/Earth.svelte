@@ -25,6 +25,7 @@
     const bumpMap = useLoader(TextureLoader).load("/earth_topology.png");
     const specularMap = useLoader(TextureLoader).load("/earth_specular.jpg");
     const clouds = useLoader(TextureLoader).load("/earth_clouds.jpg");
+    const lights = useLoader(TextureLoader).load("/earth_lights.jpg");
 
     const obliquityRad = MathUtils.degToRad(-getObliquity());
 
@@ -110,18 +111,21 @@
          The inner group is tilted by obliquity.
          We apply the daily rotation around the Y axis of this TILTED group.
     -->
-    {#if $texture && $bumpMap && $clouds && $specularMap}
+    {#if $texture && $bumpMap && $clouds && $specularMap && $lights}
         <T.Group rotation.x={obliquityRad} rotation.y={rotationY}>
             <T.Mesh receiveShadow castShadow scale={[1, scaleY, 1]}>
                 <T.SphereGeometry args={[1, 64, 64]} />
                 <T.MeshStandardMaterial
                     map={$texture}
                     bumpMap={$bumpMap}
-                    bumpScale={0.05}
+                    bumpScale={0.09}
                     roughnessMap={$bumpMap}
                     metalnessMap={$specularMap}
-                    metalness={0.6}
-                    roughness={0.5}
+                    metalness={0.9}
+                    roughness={2}
+                    emissiveMap={$lights}
+                    emissive="white"
+                    emissiveIntensity={5}
                 />
             </T.Mesh>
 
@@ -184,8 +188,7 @@
                 <T.MeshStandardMaterial
                     map={$clouds}
                     transparent
-                    opacity={0.7}
-                    blending={AdditiveBlending}
+                    opacity={0.75}
                 />
             </T.Mesh>
         </T.Group>

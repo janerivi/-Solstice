@@ -9,17 +9,17 @@
 </script>
 
 <T.Group>
-    <!-- Sun Mesh -->
-    <T.Mesh castShadow={false} receiveShadow={false}>
-        <T.SphereGeometry args={[1.5, 64, 64]} />
-        <T.MeshStandardMaterial
-            map={$texture || null}
-            emissiveMap={$texture || null}
-            emissive="white"
-            emissiveIntensity={1}
-            color="white"
-        />
-    </T.Mesh>
+    <!-- Sun Mesh (Only render when texture is ready) -->
+    {#if $texture}
+        <T.Mesh castShadow={false} receiveShadow={false}>
+            <T.SphereGeometry args={[1.5, 64, 64]} />
+            <T.MeshBasicMaterial
+                map={$texture}
+                color="white"
+                toneMapped={false}
+            />
+        </T.Mesh>
+    {/if}
 
     <!-- Light Target (The Earth) -->
     <!-- We must add this to the scene so the light can track it -->
@@ -30,9 +30,6 @@
 
     <!-- Light Source -->
     {#if target}
-        <T.DirectionalLight position={[0, 0, 0]} intensity={5} {target} />
+        <T.DirectionalLight position={[0, 0, 0]} intensity={8} {target} />
     {/if}
-
-    <!-- Faint ambient to prove scene exists, but Directional should dominate -->
-    <T.AmbientLight intensity={0.05} />
 </T.Group>
