@@ -88,9 +88,12 @@ export function getSunTimes(date: Date, location: SphericalCoords) {
     const rise = Astronomy.SearchRiseSet(Astronomy.Body.Sun, observer, +1, date, 1);
     const set = Astronomy.SearchRiseSet(Astronomy.Body.Sun, observer, -1, date, 1);
 
+    const noon = Astronomy.SearchHourAngle(Astronomy.Body.Sun, observer, 0, date);
+
     return {
         sunrise: rise ? rise.date : null,
-        sunset: set ? set.date : null // date property of the event
+        sunset: set ? set.date : null,
+        solarNoon: noon ? noon.time.date : null
     };
 }
 

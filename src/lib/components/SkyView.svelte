@@ -143,8 +143,6 @@
 
         pathD = "";
         let segmentStart = true;
-        let localMaxAlt = -90;
-        let maxAltData = null;
 
         for (let m = 0; m <= 24 * 60; m += 15) {
             const time = new Date(startOfDay.getTime() + m * 60000);
@@ -153,22 +151,6 @@
             const x = scaleX(m); // X is Time (minutes)
             const y = scaleY(pos.altitude);
 
-            if (pos.altitude > localMaxAlt) {
-                localMaxAlt = pos.altitude;
-                maxAltData = {
-                    x,
-                    y,
-                    alt: pos.altitude,
-                    az: pos.azimuth,
-                    time: formatLocalTime(
-                        time,
-                        $observerLocation.lat,
-                        $observerLocation.lon,
-                    ),
-                };
-            }
-
-            // Draw Path
             if (segmentStart) {
                 pathD += `M ${x} ${y}`;
                 segmentStart = false;
@@ -177,7 +159,31 @@
             }
         }
 
-        if (maxAltData) maxAltPoint = maxAltData;
+        if (sunTimes.solarNoon) {
+            const time = sunTimes.solarNoon;
+            const pos = getSunPosition(time, $observerLocation);
+            const x = scaleX(
+                getLocalMinutesFromMidnight(
+                    time,
+                    $observerLocation.lat,
+                    $observerLocation.lon,
+                ),
+            );
+            const y = scaleY(pos.altitude);
+
+            maxAltPoint = {
+                x,
+                y,
+                alt: pos.altitude,
+                az: pos.azimuth,
+                time: formatLocalTime(
+                    time,
+                    $observerLocation.lat,
+                    $observerLocation.lon,
+                    true,
+                ),
+            };
+        }
     }
 </script>
 
@@ -279,7 +285,7 @@
         />
 
         <!-- Max Altitude Marker -->
-        {#if maxAltPoint.alt > -10}
+        {#if maxAltPoint.alt > -Infinity}
             <line
                 x1={maxAltPoint.x}
                 y1={maxAltPoint.y}

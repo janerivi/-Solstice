@@ -16,12 +16,13 @@ export function getTimeZone(lat: number, lon: number): string {
 /**
  * Formats a date to HH:mm string in the local time of the given coordinates.
  */
-export function formatLocalTime(date: Date | null, lat: number, lon: number): string {
+export function formatLocalTime(date: Date | null, lat: number, lon: number, includeSeconds: boolean = false): string {
     if (!date) return '';
     const timeZone = getTimeZone(lat, lon);
     return new Intl.DateTimeFormat('en-GB', {
         hour: '2-digit',
         minute: '2-digit',
+        second: includeSeconds ? '2-digit' : undefined,
         timeZone,
         hour12: false
     }).format(date);
